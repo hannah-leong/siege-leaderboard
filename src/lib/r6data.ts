@@ -3,17 +3,26 @@ import type { PlayerConfig, PlayerStats } from '@/types/stats';
 const API_BASE = 'https://api.r6data.com';
 
 interface RankedProfile {
-  rank: number;
-  wins: number;
+  rank_points: number;
+}
+
+interface SeasonStatistics {
   kills: number;
   deaths: number;
-  losses: number;
-  rank_points: number;
+  match_outcomes: {
+    wins: number;
+    losses: number;
+  };
+}
+
+interface FullProfile {
+  profile: RankedProfile;
+  season_statistics: SeasonStatistics;
 }
 
 interface BoardProfile {
   board_id: string;
-  full_profiles: Array<{ profile: RankedProfile }>;
+  full_profiles: FullProfile[];
 }
 
 interface PlatformProfile {
@@ -27,12 +36,14 @@ function parseStats(displayName: string, username: string, raw: unknown): Player
     ?.board_ids_full_profiles
     ?.find((b) => b.board_id === 'ranked');
 
-  const profile = rankedBoard?.full_profiles?.[0]?.profile;
+  const fullProfile = rankedBoard?.full_profiles?.[0];
+  const profile = fullProfile?.profile;
+  const seasonStats = fullProfile?.season_statistics;
 
-  const kills = profile?.kills ?? 0;
-  const deaths = profile?.deaths ?? 0;
-  const wins = profile?.wins ?? 0;
-  const losses = profile?.losses ?? 0;
+  const kills = seasonStats?.kills ?? 0;
+  const deaths = seasonStats?.deaths ?? 0;
+  const wins = seasonStats?.match_outcomes?.wins ?? 0;
+  const losses = seasonStats?.match_outcomes?.losses ?? 0;
   const matchesPlayed = wins + losses;
 
   return {
