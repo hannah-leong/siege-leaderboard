@@ -1,0 +1,23 @@
+name: Update Siege Stats
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Fetch and upload stats
+        env:
+          R6DATA_API_KEY: ${{ secrets.R6DATA_API_KEY }}
+          LEADERBOARD_URL: ${{ secrets.LEADERBOARD_URL }}
+          UPDATE_SECRET: ${{ secrets.UPDATE_SECRET }}
+        run: node scripts/fetch-stats.mjs

@@ -60,7 +60,11 @@ function parseStats(displayName: string, username: string, raw: unknown): Player
   };
 }
 
-async function fetchPlayerStats(player: PlayerConfig, retries = 3): Promise<PlayerStats | null> {
+const BETWEEN_PLAYERS_DELAY = 2000;
+const RETRY_DELAY = 5000;
+const MAX_RETRIES = 5;
+
+async function fetchPlayerStats(player: PlayerConfig, retries = MAX_RETRIES): Promise<PlayerStats | null> {
   const apiKey = process.env.R6DATA_API_KEY;
   if (!apiKey) throw new Error('R6DATA_API_KEY is not set in .env.local');
 
@@ -72,14 +76,15 @@ async function fetchPlayerStats(player: PlayerConfig, retries = 3): Promise<Play
   });
 
   try {
+    // cache: 'no-store' prevents Next.js from caching 503s, letting retries hit the network
     const response = await fetch(`${API_BASE}/api/stats?${params}`, {
       headers: { 'api-key': apiKey },
-      next: { revalidate: 600 },
+      cache: 'no-store',
     });
 
     if (response.status === 503 && retries > 0) {
       const errorData = await response.json().catch(() => ({})) as { retryAfter?: number };
-      const delay = errorData.retryAfter ?? 2000;
+      const delay = Math.max(errorData.retryAfter ?? RETRY_DELAY, RETRY_DELAY);
       await new Promise((resolve) => setTimeout(resolve, delay));
       return fetchPlayerStats(player, retries - 1);
     }
@@ -102,6 +107,7 @@ export async function fetchAllPlayerStats(players: PlayerConfig[]): Promise<Play
   for (const player of players) {
     const stats = await fetchPlayerStats(player);
     if (stats) results.push(stats);
+    await new Promise((resolve) => setTimeout(resolve, BETWEEN_PLAYERS_DELAY));
   }
   return results;
 }
