@@ -3,5 +3,10 @@ import type { PlayerConfig } from '@/types/stats';
 export const PLAYERS: PlayerConfig[] = [
   // Add your friends' Ubisoft Connect usernames here
   { displayName: 'CtrlSpecDel', username: 'ctrlspecdel', platform: 'uplay' },
+  { displayName: 'Strawb', username: 'strawb.', platform: 'uplay' },
   { displayName: 'ItsTyBlack', username: 'itstyblack', platform: 'uplay' },
+  { displayName: 'VanessaTurtle', username: 'vanessaturtle', platform: 'uplay' },
+  { displayName: 'TomJBeers', username: 'tomjbeers', platform: 'uplay' },
+  { displayName: 'Ralphyy', username: 'ralphyy', platform: 'uplay' },
+  { displayName: 'Doki', username: 'doki.g2', platform: 'uplay' },
 ];
