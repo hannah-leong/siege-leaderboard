@@ -49,7 +49,7 @@ function parseStats(displayName: string, username: string, raw: unknown): Player
   };
 }
 
-export async function fetchPlayerStats(player: PlayerConfig): Promise<PlayerStats | null> {
+async function fetchPlayerStats(player: PlayerConfig, retries = 3): Promise<PlayerStats | null> {
   const apiKey = process.env.R6DATA_API_KEY;
   if (!apiKey) throw new Error('R6DATA_API_KEY is not set in .env.local');
 
@@ -66,6 +66,13 @@ export async function fetchPlayerStats(player: PlayerConfig): Promise<PlayerStat
       next: { revalidate: 600 },
     });
 
+    if (response.status === 503 && retries > 0) {
+      const errorData = await response.json().catch(() => ({})) as { retryAfter?: number };
+      const delay = errorData.retryAfter ?? 2000;
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      return fetchPlayerStats(player, retries - 1);
+    }
+
     if (!response.ok) {
       console.error(`Failed to fetch stats for ${player.username}: ${response.status}`);
       return null;
@@ -80,6 +87,10 @@ export async function fetchPlayerStats(player: PlayerConfig): Promise<PlayerStat
 }
 
 export async function fetchAllPlayerStats(players: PlayerConfig[]): Promise<PlayerStats[]> {
-  const results = await Promise.all(players.map(fetchPlayerStats));
-  return results.filter((s): s is PlayerStats => s !== null);
+  const results: PlayerStats[] = [];
+  for (const player of players) {
+    const stats = await fetchPlayerStats(player);
+    if (stats) results.push(stats);
+  }
+  return results;
 }
